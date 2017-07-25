@@ -53,10 +53,10 @@ int main(void)
 				break;
 			case ID_REMOTE_NEW_INCOMING_CONNECTION:
 				printf("Another client has connected.\n");
-				new_clients.push_back(packet->systemAddress);
 				break;
 			case ID_NEW_INCOMING_CONNECTION:
 				printf("A connection is incoming.\n");
+				new_clients.push_back(packet->systemAddress);
 				break;
 			case ID_NO_FREE_INCOMING_CONNECTIONS:
 				printf("The server is full.\n");
@@ -69,35 +69,35 @@ int main(void)
 				break;
 
 			case ID_GAME_COMMAND_REQUEST_BATTLE_START:
-			{
-				if (new_clients.size() >= total_players)
 				{
-					RakNet::BitStream bsOut;
-					bsOut.Write((RakNet::MessageID)ID_GAME_COMMAND_BATTLE_STARTED);
-					bsOut.Write((RakNet::MessageID)new_clients.size() - 1);
-					bsOut.Write((RakNet::MessageID)total_players);
+					if (new_clients.size() >= total_players)
+					{					
+						for (auto index = 0; index < new_clients.size(); ++index)
+						{
+							RakNet::BitStream bsOut;
+							bsOut.Write((RakNet::MessageID)ID_GAME_COMMAND_BATTLE_STARTED);
+							bsOut.Write((RakNet::MessageID)index);
+							bsOut.Write((RakNet::MessageID)total_players);
+							peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, new_clients[index], false);
+						}
 
-					for (const auto& client : new_clients)
-					{
-						peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, client, false);
+						current_clients = std::move(new_clients);
 					}
-
-					current_clients = std::move(new_clients);
 				}
-			}
+				break;
 			case ID_GAME_COMMAND_PLACE_HERO:
 			case ID_GAME_COMMAND_OFFMAP_SUPPORT:
 			case ID_GAME_COMMAND_USE_ABILITY:
 			case ID_GAME_COMMAND_END_BATTLE:
 			case ID_GAME_COMMAND_LOCKSTEP_COUNT:
-			{
-				RakNet::BitStream bsOut(packet->data, packet->length, false);
-				for (const auto& client : new_clients)
 				{
-					peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, client, false);
+					RakNet::BitStream bsOut(packet->data, packet->length, false);
+					for (const auto& client : current_clients)
+					{
+						peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, client, false);
+					}
 				}
-			}
-			break;
+				break;
 
 			default:
 				printf("Message with identifier %i has arrived.\n", packet->data[0]);
