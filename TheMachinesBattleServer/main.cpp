@@ -9,7 +9,7 @@
 #include <algorithm>
 
 #define MAX_CLIENTS 10
-#define SERVER_PORT 58888
+#define SERVER_PORT 7888
 
 enum GameMessages
 {
