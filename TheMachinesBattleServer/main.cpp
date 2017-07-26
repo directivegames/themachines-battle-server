@@ -8,7 +8,7 @@
 #include <vector>
 
 #define MAX_CLIENTS 10
-#define SERVER_PORT 58888
+#define SERVER_PORT 7888
 
 enum GameMessages
 {
@@ -30,8 +30,6 @@ const auto total_players = 2;
 
 int main(void)
 {
-	char str[512];
-
 	RakNet::RakPeerInterface *peer = RakNet::RakPeerInterface::GetInstance();
 	RakNet::Packet *packet;
 
