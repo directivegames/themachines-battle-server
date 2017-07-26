@@ -6,6 +6,7 @@
 #include "RakNet/BitStream.h"
 #include "RakNet/RakNetTypes.h"  // MessageID
 #include <vector>
+#include <algorithm>
 
 #define MAX_CLIENTS 10
 #define SERVER_PORT 58888
@@ -30,14 +31,13 @@ const auto total_players = 2;
 
 int main(void)
 {
-	char str[512];
-
 	RakNet::RakPeerInterface *peer = RakNet::RakPeerInterface::GetInstance();
 	RakNet::Packet *packet;
 
 	RakNet::SocketDescriptor sd(SERVER_PORT, 0);
 	peer->Startup(MAX_CLIENTS, &sd, 1);
 	peer->SetMaximumIncomingConnections(MAX_CLIENTS);
+	printf("The Machines(TM) battle server has started!.\n");
 
 	while (1)
 	{
@@ -62,10 +62,12 @@ int main(void)
 				printf("The server is full.\n");
 				break;
 			case ID_DISCONNECTION_NOTIFICATION:
-				printf("A client has disconnected.\n");
+				new_clients.erase(std::remove(new_clients.begin(), new_clients.end(), packet->systemAddress), new_clients.end());
+				printf("A client has disconnected. Now there are %zd pending clients\n", new_clients.size());
 				break;
 			case ID_CONNECTION_LOST:
-				printf("A client lost the connection.\n");
+				new_clients.erase(std::remove(new_clients.begin(), new_clients.end(), packet->systemAddress), new_clients.end());
+				printf("A client lost the connection. Now there are %zd pending clients\n", new_clients.size());
 				break;
 
 			case ID_GAME_COMMAND_REQUEST_BATTLE_START:
