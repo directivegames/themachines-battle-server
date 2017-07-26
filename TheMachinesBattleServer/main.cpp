@@ -31,18 +31,34 @@ const auto total_players = 2;
 
 void RemoveClient(const RakNet::SystemAddress& clientSystemAddr)
 {
-	std::cout << "client " << clientSystemAddr.ToString() << " disconnected\n";
-
-	new_clients.erase(std::remove(new_clients.begin(), new_clients.end(), clientSystemAddr), new_clients.end());
-	std::cout << "there are " << new_clients.size() << " pending clients\n";
+	{
+		const auto count = new_clients.size();
+		new_clients.erase(std::remove(new_clients.begin(), new_clients.end(), clientSystemAddr), new_clients.end());
+		if (count != new_clients.size())
+		{
+			std::cout << "Client " << clientSystemAddr.ToString() << " removed from pending list\n";
+			std::cout << "There are " << new_clients.size() << " pending clients\n";
+		}
+	}
 
 	for (auto& session : sessions)
 	{
+		const auto count = session.size();
 		session.erase(std::remove(session.begin(), session.end(), clientSystemAddr), session.end());
+		if (count != session.size())
+		{
+			std::cout << "Client " << clientSystemAddr.ToString() << " removed from ongoing session.\n";
+		}
 	}
 
-	sessions.erase(std::remove_if(sessions.begin(), sessions.end(), [](const auto& s) {return s.size() == 0; }), sessions.end());
-	std::cout << "there are " << sessions.size() << " ongoing sessions\n";
+	{
+		const auto count = sessions.size();
+		sessions.erase(std::remove_if(sessions.begin(), sessions.end(), [](const auto& s) {return s.size() == 0; }), sessions.end());
+		if (count != sessions.size())
+		{
+			std::cout << "Onging session cleared. There are " << sessions.size() << " ongoing sessions.\n";
+		}
+	}
 }
 
 void AddIncomingClient(const RakNet::SystemAddress& clientSystemAddr)
@@ -65,7 +81,12 @@ void StartSession(RakNet::RakPeerInterface *peer)
 
 	sessions.emplace_back(std::move(new_clients));
 
-	std::cout << "new session started, there are " << sessions.size() << " ongoing sessions\n";
+	std::cout << "NEW SESSION STARTED, TADA!!!!\n";
+	for (const auto& client : sessions.back())
+	{
+		std::cout << "\t" << client.ToString() << std::endl;
+	}
+	std::cout << "There are " << sessions.size() << " ongoing sessions\n";
 }
 
 int main(void)
@@ -106,12 +127,12 @@ int main(void)
 				printf("\n");
 				break;
 			case ID_DISCONNECTION_NOTIFICATION:
-				printf("A client has disconnected.");
+				printf("A client %s has disconnected.\n", packet->systemAddress.ToString());
 				RemoveClient(packet->systemAddress);
 				printf("\n");
 				break;
 			case ID_CONNECTION_LOST:
-				printf("A client lost the connection.");
+				printf("A client %s lost the connection.\n", packet->systemAddress.ToString());
 				RemoveClient(packet->systemAddress);
 				printf("\n");
 				break;
@@ -161,6 +182,8 @@ int main(void)
 				break;
 			}
 		}
+
+		Sleep(1);
 	}
 
 
