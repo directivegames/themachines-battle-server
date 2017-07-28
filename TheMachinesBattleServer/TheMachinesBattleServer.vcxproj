@@ -121,6 +121,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BattleSession.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RakNet\Base64Encoder.cpp" />
     <ClCompile Include="RakNet\BitStream.cpp" />
@@ -234,6 +235,7 @@
     <ClCompile Include="RakNet\_FindFirst.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BattleSession.h" />
     <ClInclude Include="RakNet\AutopatcherPatchContext.h" />
     <ClInclude Include="RakNet\AutopatcherRepositoryInterface.h" />
     <ClInclude Include="RakNet\Base64Encoder.h" />
