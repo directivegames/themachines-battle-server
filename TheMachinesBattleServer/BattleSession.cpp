@@ -20,7 +20,7 @@ bool BattleSession::AddClient(const RakNet::SystemAddress& client)
 		return false;
 	}
 
-	clients.push_back(client);
+	clients.emplace(client, ClientInfo{ 0 });
 	printf("Client added to session %d: %s\n\n", sessionID, client.ToString(true));
 
 	return true;
@@ -28,7 +28,7 @@ bool BattleSession::AddClient(const RakNet::SystemAddress& client)
 
 bool BattleSession::RemoveClient(const RakNet::SystemAddress& client)
 {
-	auto itr = std::find(clients.begin(), clients.end(), client);
+	auto itr = clients.find(client);
 	if (itr != clients.end())
 	{
 		clients.erase(itr);
@@ -41,7 +41,7 @@ bool BattleSession::RemoveClient(const RakNet::SystemAddress& client)
 
 bool BattleSession::ContainsClient(const RakNet::SystemAddress& client) const
 {
-	return std::find(clients.begin(), clients.end(), client) != clients.end();
+	return clients.find(client) != clients.end();
 }
 
 bool BattleSession::CanAddNewClient() const
@@ -61,13 +61,16 @@ bool BattleSession::TryStartBattle(RakNet::RakPeerInterface* peer)
 		return false;
 	}
 
-	for (auto index = 0; index < clients.size(); ++index)
+	//for (auto index = 0; index < clients.size(); ++index)
+	int team = 0;
+	for (const auto& clientEntry : clients)
 	{
 		RakNet::BitStream bsOut;
 		bsOut.Write((RakNet::MessageID)ID_GAME_COMMAND_BATTLE_STARTED);
-		bsOut.Write((RakNet::MessageID)index);
+		bsOut.Write((RakNet::MessageID)team);
 		bsOut.Write((RakNet::MessageID)clients.size());
-		peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, clients[index], false);
+		peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, clientEntry.first, false);
+		++team;
 	}
 
 	battleStarted = true;
@@ -84,8 +87,19 @@ void BattleSession::BroadcastMessage(RakNet::RakPeerInterface* peer, const RakNe
 		return;
 	}
 
-	for (auto client: clients)
+	for (const auto& clientEntry: clients)
 	{
-		peer->Send(&message, HIGH_PRIORITY, RELIABLE_ORDERED, 0, client, false);
+		peer->Send(&message, HIGH_PRIORITY, RELIABLE_ORDERED, 0, clientEntry.first, false);
 	}	
+}
+
+BattleSession::ClientInfo* BattleSession::GetClientInfo(const RakNet::SystemAddress& client)
+{
+	auto clientInfo = clients.find(client);
+	if (clientInfo != clients.end())
+	{
+		return &(clientInfo->second);
+	}
+
+	return nullptr;
 }

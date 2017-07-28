@@ -116,12 +116,43 @@ int main(void)
 				case ID_GAME_COMMAND_OFFMAP_SUPPORT:
 				case ID_GAME_COMMAND_USE_ABILITY:
 				case ID_GAME_COMMAND_END_BATTLE:
-				case ID_GAME_COMMAND_LOCKSTEP_COUNT:
 				{
 					RakNet::BitStream bsOut(packet->data, packet->length, false);
 					if (auto session = FindSession(client))
 					{
 						session->BroadcastMessage(peer, bsOut);
+					}
+					break;
+				}
+				case ID_GAME_COMMAND_LOCKSTEP_COUNT:
+				{
+					RakNet::BitStream bsIn(packet->data, packet->length, false);
+					bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
+					std::int32_t reportedFrame;
+					bsIn.Read(reportedFrame);
+
+					if (auto session = FindSession(client))
+					{
+						if (auto clientInfo = session->GetClientInfo(client))
+						{
+							clientInfo->lastReportedFrame = reportedFrame;
+						}
+
+						auto& sessionClients = session->GetClients();
+						auto frameBehind = 0;
+						for (const auto& clientEntry : sessionClients)
+						{
+							auto behind = std::max<std::int32_t>(0, clientEntry.second.lastReportedFrame - reportedFrame);
+							if (frameBehind < behind)
+							{
+								frameBehind = behind;
+							}
+						}
+
+						RakNet::BitStream bsOut;
+						bsOut.Write((RakNet::MessageID)ID_GAME_COMMAND_CATCH_UP);
+						bsOut.Write((std::int32_t)frameBehind);
+						peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, client, false);
 					}
 					break;
 				}

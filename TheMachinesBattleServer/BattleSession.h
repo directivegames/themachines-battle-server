@@ -1,8 +1,11 @@
 // Copyright 2017 Directive Games Limited - All Rights Reserved
 
 #include "RakNet/MessageIdentifiers.h"
+#include "RakNet/RakNetTypes.h"
 
 #include <vector>
+#include <map>
+#include <cstdint>
 
 namespace RakNet
 {
@@ -21,8 +24,11 @@ enum GameMessages
 	ID_GAME_COMMAND_REQUEST_BATTLE_START,   // client to server
 	ID_GAME_COMMAND_BATTLE_STARTED,          // server to client
 
-	ID_GAME_COMMAND_LOCKSTEP_COUNT
-};
+	ID_GAME_COMMAND_LOCKSTEP_COUNT,
+
+	ID_GAME_COMMAND_CATCH_UP,               // server to client
+};    
+
 
 class BattleSession
 {
@@ -43,8 +49,15 @@ public:
 	bool CanAddNewClient() const;
 	int GetSessionID() const { return sessionID; }
 
+	struct ClientInfo
+	{
+		std::int32_t lastReportedFrame;
+	};
+	ClientInfo* GetClientInfo(const RakNet::SystemAddress& client);
+	std::map<RakNet::SystemAddress, ClientInfo>& GetClients() { return clients; }
+
 private:
-	std::vector<RakNet::SystemAddress> clients;
+	std::map<RakNet::SystemAddress, ClientInfo> clients;
 	size_t capacity;
 	int sessionID;
 	bool battleStarted = false;
