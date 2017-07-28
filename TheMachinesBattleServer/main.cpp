@@ -15,7 +15,7 @@
 #include <algorithm>
 
 #define MAX_CONNECTIONS 100
-#define SESSION_CAPACITY 1
+#define SESSION_CAPACITY 2
 #define SERVER_PORT 7888
 
 // client address : the session it belongs to
