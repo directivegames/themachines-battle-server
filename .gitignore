@@ -1,6 +1,6 @@
 TheMachinesBattleServer/x64/
-.vs/TheMachinesBattleServer/v15/Browse.VC.opendb
-.vs/TheMachinesBattleServer/v15/Browse.VC.db
+*.VC.opendb
+*.VC.db
+*.suo
+*.vcxproj.user
 x64/
-TheMachinesBattleServer-2015.VC.db
-TheMachinesBattleServer-2015.VC.VC.opendb

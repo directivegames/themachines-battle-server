@@ -1,3 +1,5 @@
+// Copyright 2017 Directive Games Limited - All Rights Reserved
+
 #include <stdio.h>
 #include <string.h>
 #include <iostream>
@@ -5,181 +7,128 @@
 #include "RakNet/MessageIdentifiers.h"
 #include "RakNet/BitStream.h"
 #include "RakNet/RakNetTypes.h"  // MessageID
+#include "BattleSession.h"
+
 #include <vector>
+#include <map>
+#include <memory>
 #include <algorithm>
 
-#define MAX_CLIENTS 10
+#define MAX_CONNECTIONS 100
+#define SESSION_CAPACITY 1
 #define SERVER_PORT 7888
 
-enum GameMessages
+// client address : the session it belongs to
+std::map<RakNet::SystemAddress, std::shared_ptr<BattleSession>> sessions;
+
+static std::shared_ptr<BattleSession> FindSession(const RakNet::SystemAddress& client)
 {
-	ID_GAME_COMMAND_PLACE_HERO = ID_USER_PACKET_ENUM + 1,
-	ID_GAME_COMMAND_OFFMAP_SUPPORT,
-	ID_GAME_COMMAND_USE_ABILITY,
-	ID_GAME_COMMAND_END_BATTLE,
-
-	ID_GAME_COMMAND_REQUEST_BATTLE_START,   // client to server
-	ID_GAME_COMMAND_BATTLE_STARTED,          // server to client
-
-	ID_GAME_COMMAND_LOCKSTEP_COUNT
-
-};
-
-std::vector<RakNet::SystemAddress> new_clients;
-std::vector<std::vector<RakNet::SystemAddress>> sessions;
-const auto total_players = 2;
-
-void RemoveClient(const RakNet::SystemAddress& clientSystemAddr)
-{
+	auto itr = sessions.find(client);
+	if (itr != sessions.end())
 	{
-		const auto count = new_clients.size();
-		new_clients.erase(std::remove(new_clients.begin(), new_clients.end(), clientSystemAddr), new_clients.end());
-		if (count != new_clients.size())
-		{
-			std::cout << "Client " << clientSystemAddr.ToString() << " removed from pending list\n";
-			std::cout << "There are " << new_clients.size() << " pending clients\n";
-		}
+		return itr->second;
 	}
 
-	for (auto& session : sessions)
-	{
-		const auto count = session.size();
-		session.erase(std::remove(session.begin(), session.end(), clientSystemAddr), session.end());
-		if (count != session.size())
-		{
-			std::cout << "Client " << clientSystemAddr.ToString() << " removed from ongoing session.\n";
-		}
-	}
-
-	{
-		const auto count = sessions.size();
-		sessions.erase(std::remove_if(sessions.begin(), sessions.end(), [](const auto& s) {return s.size() == 0; }), sessions.end());
-		if (count != sessions.size())
-		{
-			std::cout << "Onging session cleared. There are " << sessions.size() << " ongoing sessions.\n";
-		}
-	}
+	return nullptr;
 }
 
-void AddIncomingClient(const RakNet::SystemAddress& clientSystemAddr)
+static int GetNewSessionID()
 {
-	std::cout << "Get an incoming client " << clientSystemAddr.ToString() << "\n";
-	RemoveClient(clientSystemAddr);
-	new_clients.push_back(clientSystemAddr);
-}
-
-void StartSession(RakNet::RakPeerInterface *peer)
-{
-	for (auto index = 0; index < new_clients.size(); ++index)
-	{
-		RakNet::BitStream bsOut;
-		bsOut.Write((RakNet::MessageID)ID_GAME_COMMAND_BATTLE_STARTED);
-		bsOut.Write((RakNet::MessageID)index);
-		bsOut.Write((RakNet::MessageID)total_players);
-		peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, new_clients[index], false);
-	}
-
-	sessions.emplace_back(std::move(new_clients));
-
-	std::cout << "NEW SESSION STARTED, TADA!!!!\n";
-	for (const auto& client : sessions.back())
-	{
-		std::cout << "\t" << client.ToString() << std::endl;
-	}
-	std::cout << "There are " << sessions.size() << " ongoing sessions\n";
+	static int nextSessionID = 0;
+	return nextSessionID++;
 }
 
 int main(void)
 {
-	RakNet::RakPeerInterface *peer = RakNet::RakPeerInterface::GetInstance();
-	RakNet::Packet *packet;
+	RakNet::RakPeerInterface* peer = RakNet::RakPeerInterface::GetInstance();
+	RakNet::Packet* packet;
 
 	RakNet::SocketDescriptor sd(SERVER_PORT, 0);
-	peer->Startup(MAX_CLIENTS, &sd, 1);
-	peer->SetMaximumIncomingConnections(MAX_CLIENTS);
-	printf("The Machines(TM) battle server has started at port %d\n\n", SERVER_PORT);
+	peer->Startup(MAX_CONNECTIONS, &sd, 1);
+	peer->SetMaximumIncomingConnections(MAX_CONNECTIONS);
+	printf("============================================\n");
+	printf("The Machines(TM) battle server has started at port %d\n", SERVER_PORT);
+	printf("Session capacity: %d\n", SESSION_CAPACITY);
+	printf("Max connections: %d\n", MAX_CONNECTIONS);
+	printf("============================================\n\n");
 
 	while (1)
 	{
 		for (packet = peer->Receive(); packet; peer->DeallocatePacket(packet), packet = peer->Receive())
 		{
+			auto client = packet->systemAddress;
 			switch (packet->data[0])
 			{
-			case ID_REMOTE_DISCONNECTION_NOTIFICATION:
-				printf("Another client has disconnected.\n");
-				printf("\n");
-				break;
-			case ID_REMOTE_CONNECTION_LOST:
-				printf("Another client has lost the connection.\n");
-				printf("\n");
-				break;
-			case ID_REMOTE_NEW_INCOMING_CONNECTION:
-				printf("Another client has connected.\n");
-				printf("\n");
-				break;
-			case ID_NEW_INCOMING_CONNECTION:
-				printf("A connection %s is incoming.\n", packet->systemAddress.ToString());
-				AddIncomingClient(packet->systemAddress);
-				printf("\n");
-				break;
-			case ID_NO_FREE_INCOMING_CONNECTIONS:
-				printf("The server is full.\n");
-				printf("\n");
-				break;
-			case ID_DISCONNECTION_NOTIFICATION:
-				printf("A client %s has disconnected.\n", packet->systemAddress.ToString());
-				RemoveClient(packet->systemAddress);
-				printf("\n");
-				break;
-			case ID_CONNECTION_LOST:
-				printf("A client %s lost the connection.\n", packet->systemAddress.ToString());
-				RemoveClient(packet->systemAddress);
-				printf("\n");
-				break;
-
-			case ID_GAME_COMMAND_REQUEST_BATTLE_START:
+				case ID_REMOTE_DISCONNECTION_NOTIFICATION:
+				case ID_REMOTE_CONNECTION_LOST:
+				case ID_DISCONNECTION_NOTIFICATION:
+				case ID_CONNECTION_LOST:
 				{
-					if (new_clients.size() >= total_players)
-					{					
-						StartSession(peer);
-					}
-					printf("\n");
-				}
-				break;
-			case ID_GAME_COMMAND_PLACE_HERO:
-			case ID_GAME_COMMAND_OFFMAP_SUPPORT:
-			case ID_GAME_COMMAND_USE_ABILITY:
-			case ID_GAME_COMMAND_END_BATTLE:
-			case ID_GAME_COMMAND_LOCKSTEP_COUNT:
-				{
-					RakNet::BitStream bsOut(packet->data, packet->length, false);
-					for (const auto& session : sessions)
+					printf("Client disconnected: %s\n", client.ToString(true));
+					if (auto session = FindSession(client))
 					{
-						bool seesionFound = false;
-						for (const auto& client : session)
+						session->RemoveClient(client);
+						// when all the clients in the session disconnect, the session itself will be destroyed
+						sessions.erase(client);
+					}
+					break;
+				}
+
+				case ID_REMOTE_NEW_INCOMING_CONNECTION:
+				case ID_NEW_INCOMING_CONNECTION:
+				{
+					auto session = FindSession(client);
+					if (!session)
+					{
+						// try to add the client to existing session
+						for (auto itr : sessions)
 						{
-							if (client == packet->systemAddress)
+							if (itr.second->AddClient(client))
 							{
-								seesionFound = true;
+								session = itr.second;
+								sessions[client] = session;
 								break;
 							}
 						}
-						if (seesionFound)
+
+						// no existing session is available, create a new one
+						if (!session)
 						{
-							for (const auto& client : session)
-							{
-								peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, client, false);
-							}
-							break;
+							session = std::make_shared<BattleSession>(SESSION_CAPACITY, GetNewSessionID());
+							printf("Session %d created\n", session->GetSessionID());
+							session->AddClient(client);
+							sessions[client] = session;
 						}
 					}
+					break;
 				}
-				break;
 
-			default:
-				printf("Message with identifier %i has arrived.\n", packet->data[0]);
-				printf("\n");
-				break;
+				case ID_GAME_COMMAND_REQUEST_BATTLE_START:
+				{
+					if (auto session = FindSession(client))
+					{
+						session->TryStartBattle(peer);						
+					}
+					break;
+				}
+
+				case ID_GAME_COMMAND_PLACE_HERO:
+				case ID_GAME_COMMAND_OFFMAP_SUPPORT:
+				case ID_GAME_COMMAND_USE_ABILITY:
+				case ID_GAME_COMMAND_END_BATTLE:
+				case ID_GAME_COMMAND_LOCKSTEP_COUNT:
+				{
+					RakNet::BitStream bsOut(packet->data, packet->length, false);
+					if (auto session = FindSession(client))
+					{
+						session->BroadcastMessage(peer, bsOut);
+					}
+					break;
+				}
+
+				default:
+					printf("Message with identifier %i has arrived.\n\n", packet->data[0]);
+					break;
 			}
 		}
 
