@@ -1,4 +1,5 @@
 // Copyright 2017 Directive Games Limited - All Rights Reserved
+#pragma once
 
 #include "RakNet/MessageIdentifiers.h"
 #include "RakNet/RakNetTypes.h"
@@ -11,7 +12,6 @@ namespace RakNet
 {
 	class RakPeerInterface;
 	class BitStream;
-	struct SystemAddress;	
 }
 
 enum GameMessages
@@ -28,7 +28,6 @@ enum GameMessages
 
 	ID_GAME_COMMAND_CATCH_UP,               // server to client
 };    
-
 
 class BattleSession
 {
