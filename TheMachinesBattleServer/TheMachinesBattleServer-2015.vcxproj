@@ -118,9 +118,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="BattleSession.cpp" />
     <ClCompile Include="ClientManager.cpp" />
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="main2.cpp" />
     <ClCompile Include="RakNet\Base64Encoder.cpp" />
     <ClCompile Include="RakNet\BitStream.cpp" />
@@ -238,7 +236,6 @@
     <ClCompile Include="TheMachinesClient.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BattleSession.h" />
     <ClInclude Include="ClientManager.h" />
     <ClInclude Include="RakNet\AutopatcherPatchContext.h" />
     <ClInclude Include="RakNet\AutopatcherRepositoryInterface.h" />
@@ -399,6 +396,7 @@
     <ClInclude Include="SessionManager.h" />
     <ClInclude Include="TheMachinesBattleServer.h" />
     <ClInclude Include="TheMachinesClient.h" />
+    <ClInclude Include="TheMachinesServerTypes.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -3,6 +3,7 @@
 #include "RakNet/RakNetTypes.h"
 #include "TheMachinesClient.h"
 #include <map>
+#include <memory>
 
 class ClientManager
 {

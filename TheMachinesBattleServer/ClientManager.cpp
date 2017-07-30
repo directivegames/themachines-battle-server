@@ -1,4 +1,5 @@
 #include "ClientManager.h"
+#include <iostream>
 
 TheMachinesClient* ClientManager::GetClient(const RakNet::SystemAddress& address)
 {
@@ -13,7 +14,14 @@ TheMachinesClient* ClientManager::GetClient(const RakNet::SystemAddress& address
 
 void ClientManager::RegisterClient(const RakNet::SystemAddress& address)
 {
-	clients.emplace(address, TheMachinesClient(address));
+	if (clients.count(address) == 0)
+	{
+		clients.emplace(address, TheMachinesClient(address));
+	}
+	else
+	{
+		printf("Error. A registered client %s is required to be regestered again.", address.ToString());
+	}
 }
 
 void ClientManager::UnregisterClient(const RakNet::SystemAddress& address)

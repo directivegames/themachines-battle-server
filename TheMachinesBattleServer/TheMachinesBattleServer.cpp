@@ -7,7 +7,7 @@
 TheMachinesBattleServer::TheMachinesBattleServer()
 	: peer(RakNet::RakPeerInterface::GetInstance())
 	, clientManager(std::make_unique<ClientManager>())
-	, sessionManager(std::make_unique<SessionManager>())
+	, sessionManager(std::make_unique<SessionManager>(*clientManager))
 {
 	RakNet::SocketDescriptor sd(SERVER_PORT, 0);
 	if (RakNet::RAKNET_STARTED == peer->Startup(MAX_CONNECTIONS, &sd, 1))
@@ -16,8 +16,9 @@ TheMachinesBattleServer::TheMachinesBattleServer()
 
 		printf("============================================\n");
 		printf("The Machines(TM) battle server has started at port %d\n", SERVER_PORT);
-		//printf("Session capacity: %d\n", SESSION_CAPACITY);
+		printf("Participants per battle: %d\n", Session::PARTICIPANTS_PER_SESSION);
 		printf("Max connections: %d\n", MAX_CONNECTIONS);
+		printf("A client will be required to catch up if it is behind %d frame the fastest client in the same session.\n", MAX_ALLOWED_BEHIND_FRAMES);
 		printf("============================================\n\n");
 	}
 }
@@ -45,22 +46,25 @@ void TheMachinesBattleServer::Update()
 				RegisterClient(clientAddress);
 				break;
 			case (int)TheMachinesGameMessages::ID_GAME_COMMAND_REQUEST_BATTLE_START:
+				printf("Client %s requesting battle start\n", clientAddress.ToString(true));
 				OnClientRequestSessionStart(clientAddress);
 				break;
+			case (int)TheMachinesGameMessages::ID_GAME_COMMAND_LOCKSTEP_COUNT:
+				// TODO: uncomment the following once the client is ready for "catch up instead of wait"
+			/*{
+				const auto frame = ExtractFrameCount(packet);
+				OnClientReportFrameCount(clientAddress, frame);
+			}
+			break;*/
 			case (int)TheMachinesGameMessages::ID_GAME_COMMAND_PLACE_HERO:
 			case (int)TheMachinesGameMessages::ID_GAME_COMMAND_OFFMAP_SUPPORT:
 			case (int)TheMachinesGameMessages::ID_GAME_COMMAND_USE_ABILITY:
 			case (int)TheMachinesGameMessages::ID_GAME_COMMAND_END_BATTLE:
 				BroadcastGameInstruction(clientAddress, packet);
 				break;
-			case (int)TheMachinesGameMessages::ID_GAME_COMMAND_LOCKSTEP_COUNT:
-			{
-				const auto frame = ExtractFrameCount(packet);
-				OnClientReportFrameCount(clientAddress, frame);
-			}
-				break;
+			
 			default:
-				printf("Message with identifier %i has arrived.\n\n", packet->data[0]);
+				printf("Message with unknown identifier %i has arrived.\n\n", packet->data[0]);
 				break;
 			}
 		}
@@ -76,6 +80,11 @@ void TheMachinesBattleServer::RegisterClient(const RakNet::SystemAddress& addres
 
 void TheMachinesBattleServer::UnregisterClient(const RakNet::SystemAddress& address)
 {
+	if (auto client = clientManager->GetClient(address))
+	{
+		sessionManager->RemoveFromSession(*client);
+	}
+
 	clientManager->UnregisterClient(address);
 }
 
@@ -86,11 +95,11 @@ void TheMachinesBattleServer::OnClientRequestSessionStart(const RakNet::SystemAd
 		auto session = client->GetSession();
 		if (!session)
 		{
-			sessionManager->AssignSession(*client);
+			sessionManager->AddToSession(*client);
 			session = client->GetSession();
 		}
 
-		session->OnClientRequestSessionStart(*client);
+		session->OnClientRequestSessionStart(*client, peer);
 	}
 
 	// TODO: error log for client or session not found
@@ -119,13 +128,14 @@ void TheMachinesBattleServer::OnClientReportFrameCount(const RakNet::SystemAddre
 		if (auto session = client->GetSession())
 		{
 			auto behind = session->CalcFramesBehindFastestClient(*client);
-			const std::int32_t MAX_ALLOWED_BEHIND_FRAMES = 20;
 			if (behind >= MAX_ALLOWED_BEHIND_FRAMES)
 			{
 				RakNet::BitStream bsOut;
 				bsOut.Write((RakNet::MessageID)TheMachinesGameMessages::ID_GAME_COMMAND_CATCH_UP);
 				bsOut.Write((std::int32_t)behind);
 				peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, address, false);
+
+				printf("Client %s is %d frames behind the fastest client. Requesting it to catch up.", address.ToString(), behind);
 			}
 		}
 	}
@@ -146,5 +156,8 @@ std::int32_t TheMachinesBattleServer::ExtractFrameCount(RakNet::Packet* packet) 
 	return -1;
 }
 
+void TheMachinesBattleServer::PrintCurrentState()
+{
 
+}
 

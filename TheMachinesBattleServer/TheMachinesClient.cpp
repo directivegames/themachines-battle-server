@@ -10,15 +10,15 @@ TheMachinesClient::TheMachinesClient(const RakNet::SystemAddress& addr)
 
 Session* TheMachinesClient::GetSession() const
 {
-	return session.get();
+	if (auto s = session.lock())
+	{
+		return s.get();
+	}
+	return nullptr;
 }
 
 void TheMachinesClient::AssignSession(std::shared_ptr<Session> newSession)
 {
 	session = newSession;
-	if (session)
-	{
-		session->OnAssignedToClient(*this);
-	}
 }
 

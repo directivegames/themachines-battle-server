@@ -348,12 +348,6 @@
     <ClCompile Include="RakNet\WSAStartupSingleton.cpp">
       <Filter>Source Files\RakNet</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="BattleSession.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="TheMachinesClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -839,9 +833,6 @@
     <ClInclude Include="RakNet\XBox360Includes.h">
       <Filter>Source Files\RakNet</Filter>
     </ClInclude>
-    <ClInclude Include="BattleSession.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="TheMachinesClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -855,6 +846,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Session.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TheMachinesServerTypes.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
