@@ -63,20 +63,20 @@ void Session::Broadcast(RakNet::RakPeerInterface& peer, const RakNet::BitStream&
 	}
 }
 
-std::int32_t Session::CalcFramesBehindFastestClient(const TheMachinesClient& client)
+std::int32_t Session::GetFastestFrameInSession(const TheMachinesClient& client)
 {
-	auto frameBehind = 0;
+	auto fastestFrame = 0;
 	for (const auto& sessionClient : clients)
 	{
 		if (auto otherClient = clientManager.GetClient(sessionClient.address))
 		{
-			auto behind = std::max<std::int32_t>(0, otherClient->GetLastReportedFrame() - client.GetLastReportedFrame());
-			if (frameBehind < behind)
+			auto frame = otherClient->GetLastReportedFrame();
+			if (fastestFrame < frame)
 			{
-				frameBehind = behind;
+				fastestFrame = frame;
 			}
 		}
 	}
 
-	return frameBehind;
+	return fastestFrame;
 }

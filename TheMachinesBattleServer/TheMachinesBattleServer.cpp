@@ -127,15 +127,15 @@ void TheMachinesBattleServer::OnClientReportFrameCount(const RakNet::SystemAddre
 
 		if (auto session = client->GetSession())
 		{
-			auto behind = session->CalcFramesBehindFastestClient(*client);
-			if (behind >= MAX_ALLOWED_BEHIND_FRAMES)
+			auto fastestFrame = session->GetFastestFrameInSession(*client);
+			if (fastestFrame - frame >= MAX_ALLOWED_BEHIND_FRAMES)
 			{
 				RakNet::BitStream bsOut;
 				bsOut.Write((RakNet::MessageID)TheMachinesGameMessages::ID_GAME_COMMAND_CATCH_UP);
-				bsOut.Write((std::int32_t)behind);
+				bsOut.Write((std::int32_t)fastestFrame);
 				peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, address, false);
 
-				printf("Client %s is %d frames behind the fastest client. Requesting it to catch up.", address.ToString(), behind);
+				printf("Client %s is %d frames behind the fastest client. Requesting it to catch up.", address.ToString(), fastestFrame - frame);
 			}
 		}
 	}

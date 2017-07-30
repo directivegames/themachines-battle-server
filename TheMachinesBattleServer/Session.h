@@ -27,7 +27,7 @@ public:
 
 	void OnClientRequestSessionStart(const TheMachinesClient& requestingClient, RakNet::RakPeerInterface* peer);
 	void Broadcast(RakNet::RakPeerInterface& peer, const RakNet::BitStream& message);
-	std::int32_t CalcFramesBehindFastestClient(const TheMachinesClient& client);
+	std::int32_t GetFastestFrameInSession(const TheMachinesClient& client);
 
 	void AddClient(TheMachinesClient& client);
 	void RemoveClient(TheMachinesClient& client);
