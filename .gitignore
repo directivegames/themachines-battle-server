@@ -5,3 +5,5 @@ TheMachinesBattleServer/x64/
 *.vcxproj.user
 x64/
 .vs/
+TheMachinesBattleServer-2015.sdf
+TheMachinesBattleServer-2015.opensdf
