@@ -22,3 +22,15 @@ void TheMachinesClient::AssignSession(std::shared_ptr<Session> newSession)
 	session = newSession;
 }
 
+void TheMachinesClient::SetLastReportedFrame(std::int32_t frame) 
+{ 
+	lastFrameReportTimeStamp = std::chrono::steady_clock::now();
+	lastReportedFrame = frame; 
+}
+
+std::chrono::microseconds TheMachinesClient::TimeSinceLastFrameReported() const
+{
+	auto now = std::chrono::steady_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastFrameReportTimeStamp);
+	return duration;
+}

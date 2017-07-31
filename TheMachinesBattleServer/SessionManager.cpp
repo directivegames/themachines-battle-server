@@ -72,8 +72,12 @@ void SessionManager::RemoveFromSession(TheMachinesClient& client)
 		}
 		else
 		{
-			guestSessions.erase(std::find_if(guestSessions.begin(), guestSessions.end()
-				, [session](const auto& s) { return s.get() == session; }));
+			auto removed = std::find_if(guestSessions.begin(), guestSessions.end()
+				, [session](const auto& s) { return s.get() == session; });
+			if (removed != guestSessions.end())
+			{
+				guestSessions.erase(removed);
+			}
 		}
 	}
 

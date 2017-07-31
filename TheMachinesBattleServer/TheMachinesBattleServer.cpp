@@ -4,6 +4,9 @@
 #include "Session.h"
 #include <iostream>
 
+const std::chrono::milliseconds TheMachinesBattleServer::BATTLE_WORLD_TICK_INTERVAL(10);
+const std::chrono::milliseconds TheMachinesBattleServer::TIME_BUFF_TO_DISCARD_GAME_MESSAGE(10);
+
 TheMachinesBattleServer::TheMachinesBattleServer()
 	: peer(RakNet::RakPeerInterface::GetInstance())
 	, clientManager(std::make_unique<ClientManager>())
@@ -18,7 +21,10 @@ TheMachinesBattleServer::TheMachinesBattleServer()
 		printf("The Machines(TM) battle server has started at port %d\n", SERVER_PORT);
 		printf("Participants per battle: %d\n", Session::PARTICIPANTS_PER_SESSION);
 		printf("Max connections: %d\n", MAX_CONNECTIONS);
-		printf("A client will be required to catch up if it is behind %d frame the fastest client in the same session.\n", MAX_ALLOWED_BEHIND_FRAMES);
+		printf("Catch up threshold: %d.\n", CATCH_UP_REQUIRED_THRESHOLD);
+		printf("Battle command execution delay: %d frames.\n", COMMAND_EXECUTE_DELAY);
+		printf("Battle world tick interval: %lld ms.\n", BATTLE_WORLD_TICK_INTERVAL.count());
+		printf("Time buff to discard game message: %lld ms.\n", TIME_BUFF_TO_DISCARD_GAME_MESSAGE.count());
 		printf("============================================\n\n");
 	}
 }
@@ -50,16 +56,16 @@ void TheMachinesBattleServer::Update()
 				OnClientRequestSessionStart(clientAddress);
 				break;
 			case (int)TheMachinesGameMessages::ID_GAME_COMMAND_LOCKSTEP_COUNT:
-				// TODO: uncomment the following once the client is ready for "catch up instead of wait"
-			/*{
+			{
 				const auto frame = ExtractFrameCount(packet);
 				OnClientReportFrameCount(clientAddress, frame);
 			}
-			break;*/
+			break;
 			case (int)TheMachinesGameMessages::ID_GAME_COMMAND_PLACE_HERO:
 			case (int)TheMachinesGameMessages::ID_GAME_COMMAND_OFFMAP_SUPPORT:
 			case (int)TheMachinesGameMessages::ID_GAME_COMMAND_USE_ABILITY:
 			case (int)TheMachinesGameMessages::ID_GAME_COMMAND_END_BATTLE:
+				printf("Client %s sends battle command with round tirp %lld ms\n", clientAddress.ToString(true), std::chrono::milliseconds(peer->GetLastPing(clientAddress)).count());
 				BroadcastGameInstruction(clientAddress, packet);
 				break;
 			
@@ -111,8 +117,27 @@ void TheMachinesBattleServer::BroadcastGameInstruction(const RakNet::SystemAddre
 	{
 		if (auto session = client->GetSession())
 		{
-			RakNet::BitStream bsOut(packet->data, packet->length, false);
-			session->Broadcast(*peer, bsOut);
+			auto fastestClient = session->GetFastestClientInSession();
+			auto fastestFrame = session->GetFastestFrameInSession();
+
+			RakNet::BitStream bs(packet->data, packet->length, false);
+			RakNet::MessageID messageID;
+			std::int32_t frame;
+			bs.Read(messageID);
+			bs.Read(frame);
+
+			auto fastestClientPing = peer->GetLastPing(fastestClient->GetAddress());
+			std::chrono::milliseconds roundTripDelay(fastestClientPing);
+			auto timeBehind = (fastestFrame - frame) * BATTLE_WORLD_TICK_INTERVAL + roundTripDelay + fastestClient->TimeSinceLastFrameReported();
+			if (timeBehind < BATTLE_WORLD_TICK_INTERVAL * COMMAND_EXECUTE_DELAY - TIME_BUFF_TO_DISCARD_GAME_MESSAGE)
+			{
+				session->Broadcast(*peer, bs);
+			}
+			else
+			{
+				printf("Client %s game message %d is discarded because this message is %d frames (plus round trip, plus time since it's last report, approx. %lld ms) behind the fastest client in the same session.\n"
+					, instigatingClientAddress.ToString(), messageID, fastestFrame - frame, timeBehind.count());
+			}
 		}
 	}
 
@@ -127,15 +152,17 @@ void TheMachinesBattleServer::OnClientReportFrameCount(const RakNet::SystemAddre
 
 		if (auto session = client->GetSession())
 		{
-			auto fastestFrame = session->GetFastestFrameInSession(*client);
-			if (fastestFrame - frame >= MAX_ALLOWED_BEHIND_FRAMES)
+			auto fastestFrame = session->GetFastestFrameInSession();
+			if (fastestFrame - frame >= CATCH_UP_REQUIRED_THRESHOLD && frame >= client->GetCatchupTargetFrame())	// if already catching up, don't constantly send catchup commands
 			{
+				client->SetCatchupTargetFrame(fastestFrame);
+
 				RakNet::BitStream bsOut;
 				bsOut.Write((RakNet::MessageID)TheMachinesGameMessages::ID_GAME_COMMAND_CATCH_UP);
 				bsOut.Write((std::int32_t)fastestFrame);
 				peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, address, false);
 
-				printf("Client %s is %d frames behind the fastest client. Requesting it to catch up.", address.ToString(), fastestFrame - frame);
+				printf("Client %s is %d frames behind the fastest client. Requesting it to catch up.\n", address.ToString(), fastestFrame - frame);
 			}
 		}
 	}

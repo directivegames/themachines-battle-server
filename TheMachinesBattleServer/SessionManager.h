@@ -11,12 +11,14 @@ class ClientManager;
 class SessionManager
 {
 private:
+	ClientManager& clientManager;	// damn this is ugly
+
+
 	std::map<std::int32_t, std::shared_ptr<Session>> sessions;
 
 	std::vector<std::shared_ptr<Session>> guestSessions;	// sessions for those who don't have a valid session ID
 	std::shared_ptr<Session> freeGuestSession;
 
-	ClientManager& clientManager;	// damn this is ugly
 
 	static const int MAX_CLIENTS_PER_GUEST_SESSION = 2;
 

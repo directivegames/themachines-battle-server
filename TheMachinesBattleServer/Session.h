@@ -23,11 +23,12 @@ struct SessionClient
 class Session
 {
 public:
-	Session(ClientManager& _clientManager) : clientManager(_clientManager) {}
+	Session(ClientManager& _clientManager);
 
 	void OnClientRequestSessionStart(const TheMachinesClient& requestingClient, RakNet::RakPeerInterface* peer);
 	void Broadcast(RakNet::RakPeerInterface& peer, const RakNet::BitStream& message);
-	std::int32_t GetFastestFrameInSession(const TheMachinesClient& client);
+	std::int32_t GetFastestFrameInSession() const;
+	TheMachinesClient* GetFastestClientInSession() const;
 
 	void AddClient(TheMachinesClient& client);
 	void RemoveClient(TheMachinesClient& client);
@@ -39,4 +40,7 @@ public:
 private:
 	std::vector<SessionClient> clients;
 	ClientManager& clientManager;	// damn this is ugly
+
+private:
+	bool AllRequiredParticipantsJoined() const;
 };

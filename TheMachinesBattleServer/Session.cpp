@@ -6,6 +6,10 @@
 #include "TheMachinesServerTypes.h"
 #include <algorithm>
 
+Session::Session(ClientManager& _clientManager) : clientManager(_clientManager)
+{
+}
+
 void Session::OnClientRequestSessionStart(const TheMachinesClient& requestingClient, RakNet::RakPeerInterface* peer)
 {
 	for (auto& sessionClient : clients)
@@ -15,6 +19,11 @@ void Session::OnClientRequestSessionStart(const TheMachinesClient& requestingCli
 			sessionClient.isReady = true;
 			break;
 		}
+	}
+
+	if (AllRequiredParticipantsJoined() == false)
+	{
+		return;
 	}
 
 	bool allClientsReady = true;
@@ -44,6 +53,11 @@ void Session::OnClientRequestSessionStart(const TheMachinesClient& requestingCli
 	}
 }
 
+bool Session::AllRequiredParticipantsJoined() const
+{
+	return GetCurrentClients() == PARTICIPANTS_PER_SESSION;
+}
+
 void Session::AddClient(TheMachinesClient& client)
 {
 	clients.push_back(SessionClient(client.GetAddress()));
@@ -51,8 +65,12 @@ void Session::AddClient(TheMachinesClient& client)
 
 void Session::RemoveClient(TheMachinesClient& client)
 {
-	clients.erase(std::find_if(clients.begin(), clients.end()
-		, [client](const auto& sessionClient) { return sessionClient.address == client.GetAddress(); }));
+	auto removed = std::find_if(clients.begin(), clients.end()
+		, [client](const auto& sessionClient) { return sessionClient.address == client.GetAddress(); });
+	if (removed != clients.end())
+	{
+		clients.erase(removed);
+	}
 }
 
 void Session::Broadcast(RakNet::RakPeerInterface& peer, const RakNet::BitStream& message)
@@ -63,8 +81,15 @@ void Session::Broadcast(RakNet::RakPeerInterface& peer, const RakNet::BitStream&
 	}
 }
 
-std::int32_t Session::GetFastestFrameInSession(const TheMachinesClient& client)
+std::int32_t Session::GetFastestFrameInSession() const
 {
+	auto fastestClient = GetFastestClientInSession();
+	return fastestClient ? fastestClient->GetLastReportedFrame() : 0;
+}
+
+TheMachinesClient* Session::GetFastestClientInSession() const
+{
+	TheMachinesClient* fastestClient = nullptr;
 	auto fastestFrame = 0;
 	for (const auto& sessionClient : clients)
 	{
@@ -73,10 +98,10 @@ std::int32_t Session::GetFastestFrameInSession(const TheMachinesClient& client)
 			auto frame = otherClient->GetLastReportedFrame();
 			if (fastestFrame < frame)
 			{
+				fastestClient = otherClient;
 				fastestFrame = frame;
 			}
 		}
 	}
-
-	return fastestFrame;
+	return fastestClient;
 }
