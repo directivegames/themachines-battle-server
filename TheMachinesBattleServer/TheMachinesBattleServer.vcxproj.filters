@@ -21,9 +21,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="RakNet\_FindFirst.cpp">
       <Filter>Source Files\RakNet</Filter>
     </ClCompile>
@@ -354,7 +351,22 @@
     <ClCompile Include="RakNet\WSAStartupSingleton.cpp">
       <Filter>Source Files\RakNet</Filter>
     </ClCompile>
-    <ClCompile Include="BattleSession.cpp">
+    <ClCompile Include="ClientManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="main2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Session.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SessionManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TheMachinesBattleServer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TheMachinesClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -826,6 +838,24 @@
     </ClInclude>
     <ClInclude Include="BattleSession.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ClientManager.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Session.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SessionManager.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TheMachinesBattleServer.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TheMachinesClient.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TheMachinesServerTypes.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

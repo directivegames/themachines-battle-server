@@ -121,8 +121,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="BattleSession.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="ClientManager.cpp" />
+    <ClCompile Include="main2.cpp" />
     <ClCompile Include="RakNet\Base64Encoder.cpp" />
     <ClCompile Include="RakNet\BitStream.cpp" />
     <ClCompile Include="RakNet\CCRakNetSlidingWindow.cpp" />
@@ -233,9 +233,14 @@
     <ClCompile Include="RakNet\VitaIncludes.cpp" />
     <ClCompile Include="RakNet\WSAStartupSingleton.cpp" />
     <ClCompile Include="RakNet\_FindFirst.cpp" />
+    <ClCompile Include="Session.cpp" />
+    <ClCompile Include="SessionManager.cpp" />
+    <ClCompile Include="TheMachinesBattleServer.cpp" />
+    <ClCompile Include="TheMachinesClient.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BattleSession.h" />
+    <ClInclude Include="ClientManager.h" />
     <ClInclude Include="RakNet\AutopatcherPatchContext.h" />
     <ClInclude Include="RakNet\AutopatcherRepositoryInterface.h" />
     <ClInclude Include="RakNet\Base64Encoder.h" />
@@ -391,6 +396,11 @@
     <ClInclude Include="RakNet\WSAStartupSingleton.h" />
     <ClInclude Include="RakNet\XBox360Includes.h" />
     <ClInclude Include="RakNet\_FindFirst.h" />
+    <ClInclude Include="Session.h" />
+    <ClInclude Include="SessionManager.h" />
+    <ClInclude Include="TheMachinesBattleServer.h" />
+    <ClInclude Include="TheMachinesClient.h" />
+    <ClInclude Include="TheMachinesServerTypes.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
