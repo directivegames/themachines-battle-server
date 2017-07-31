@@ -28,7 +28,7 @@ void TheMachinesClient::SetLastReportedFrame(std::int32_t frame)
 	lastReportedFrame = frame; 
 }
 
-std::chrono::microseconds TheMachinesClient::TimeSinceLastFrameReported() const
+std::chrono::milliseconds TheMachinesClient::TimeSinceLastFrameReported() const
 {
 	auto now = std::chrono::steady_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastFrameReportTimeStamp);

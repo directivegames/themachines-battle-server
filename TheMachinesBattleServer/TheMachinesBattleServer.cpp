@@ -117,8 +117,8 @@ void TheMachinesBattleServer::BroadcastGameInstruction(const RakNet::SystemAddre
 	{
 		if (auto session = client->GetSession())
 		{
-			auto fastestClient = session->GetFastestClientInSession();
-			auto fastestFrame = session->GetFastestFrameInSession();
+			const auto fastestClient = session->GetFastestClientInSession();
+			const auto fastestFrame = fastestClient->GetLastReportedFrame();
 
 			RakNet::BitStream bs(packet->data, packet->length, false);
 			RakNet::MessageID messageID;
@@ -135,8 +135,10 @@ void TheMachinesBattleServer::BroadcastGameInstruction(const RakNet::SystemAddre
 			}
 			else
 			{
-				printf("Client %s game message %d is discarded because this message is %d frames (plus round trip, plus time since it's last report, approx. %lld ms) behind the fastest client in the same session.\n"
-					, instigatingClientAddress.ToString(), messageID, fastestFrame - frame, timeBehind.count());
+				printf("Client %s game message %d is discarded because this message is %lld ms behind the fastest client (%s) in the same session.\n", instigatingClientAddress.ToString(), messageID, timeBehind.count(), fastestClient->GetAddress().ToString());
+				printf("\tFastest client last reported frame: %d, command start frame: %d, frame behind: %d", fastestFrame, frame, fastestFrame - frame);
+				printf("\tClient whose command was discarded' roundtrip duration: %d ms", peer->GetLastPing(client->GetAddress()));
+				printf("\tFastest client's round trip %lld ms, duration since fastest client's last frame report: %lld ms", roundTripDelay.count(), fastestClient->TimeSinceLastFrameReported().count());
 			}
 		}
 	}

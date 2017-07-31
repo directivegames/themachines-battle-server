@@ -90,16 +90,14 @@ std::int32_t Session::GetFastestFrameInSession() const
 TheMachinesClient* Session::GetFastestClientInSession() const
 {
 	TheMachinesClient* fastestClient = nullptr;
-	auto fastestFrame = 0;
 	for (const auto& sessionClient : clients)
 	{
-		if (auto otherClient = clientManager.GetClient(sessionClient.address))
+		if (auto client = clientManager.GetClient(sessionClient.address))
 		{
-			auto frame = otherClient->GetLastReportedFrame();
-			if (fastestFrame < frame)
+			auto frame = client->GetLastReportedFrame();
+			if (!fastestClient || fastestClient->GetLastReportedFrame() < client->GetLastReportedFrame())
 			{
-				fastestClient = otherClient;
-				fastestFrame = frame;
+				fastestClient = client;
 			}
 		}
 	}

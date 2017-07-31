@@ -26,7 +26,7 @@ public:
 
 	std::int32_t GetCatchupTargetFrame() const { return catchupTargetFrame; }
 	void SetCatchupTargetFrame(std::int32_t targetFrame) { catchupTargetFrame = targetFrame; }
-	std::chrono::microseconds TimeSinceLastFrameReported() const;
+	std::chrono::milliseconds TimeSinceLastFrameReported() const;
 
 	std::int32_t GetBattleUID() const { return battleUID; }
 
