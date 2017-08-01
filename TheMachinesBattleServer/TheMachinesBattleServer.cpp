@@ -3,13 +3,14 @@
 #include "RakNet/BitStream.h"
 #include "Session.h"
 #include <iostream>
+#include <sstream>
 
 const std::chrono::milliseconds BattleServerConsts::BATTLE_WORLD_TICK_INTERVAL(10);
 const std::chrono::milliseconds BattleServerConsts::TIME_BUFF_TO_DISCARD_GAME_MESSAGE(10);
 
 TheMachinesBattleServer::TheMachinesBattleServer()
 	: peer(RakNet::RakPeerInterface::GetInstance())
-	, clientManager(std::make_unique<ClientManager>())
+	, clientManager(std::make_unique<ClientManager>(peer))
 	, sessionManager(std::make_unique<SessionManager>(*clientManager))
 {
 	RakNet::SocketDescriptor sd(BattleServerConsts::SERVER_PORT, 0);
@@ -67,7 +68,9 @@ void TheMachinesBattleServer::Update()
 			case (int)TheMachinesGameMessages::ID_GAME_COMMAND_END_BATTLE:
 				BroadcastGameInstruction(clientAddress, packet);
 				break;
-			
+			case (int)TheMachinesGameMessages::ID_PRINT_SERVER_INFO:
+				SendCurrentState(packet->systemAddress);
+				break;
 			default:
 				printf("Message with unknown identifier %i has arrived.\n\n", packet->data[0]);
 				break;
@@ -167,8 +170,24 @@ std::int32_t TheMachinesBattleServer::ExtractFrameCount(RakNet::Packet* packet) 
 	return -1;
 }
 
-void TheMachinesBattleServer::PrintCurrentState()
+void TheMachinesBattleServer::SendCurrentState(const RakNet::SystemAddress& targetAddress)
 {
-
+	RakNet::BitStream bsOut;
+	bsOut.Write((RakNet::MessageID)TheMachinesGameMessages::ID_SERVER_INFO_REPLICATED);
+	bsOut.Write(GetServerState().c_str());
+	peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, targetAddress, false);
 }
 
+std::string TheMachinesBattleServer::GetServerState() const
+{
+	std::ostringstream oss;
+	oss << *sessionManager;
+
+	std::string serverState = oss.str();
+
+	printf("============Logging server state============\n");
+	printf("%s", serverState.c_str());
+	printf("============================================\n");
+
+	return serverState;
+}

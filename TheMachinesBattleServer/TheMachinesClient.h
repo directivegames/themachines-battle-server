@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <memory>
 #include <chrono>
+#include <sstream>
 
 class Session;
 
@@ -34,4 +35,9 @@ public:
 	void AssignSession(std::shared_ptr<Session> newSession);
 
 	RakNet::SystemAddress GetAddress() const { return address; }
+
+	std::ostringstream& Write(std::ostringstream& oss) const;
+
 };
+
+inline std::ostream& operator <<(std::ostringstream& oss, const TheMachinesClient& client) { return client.Write(oss); }

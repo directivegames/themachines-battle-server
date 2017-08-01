@@ -17,6 +17,11 @@ enum class TheMachinesGameMessages
 	ID_GAME_COMMAND_LOCKSTEP_COUNT,
 
 	ID_GAME_COMMAND_CATCH_UP,               // server to client
+
+
+
+	ID_PRINT_SERVER_INFO = 250,				// for a special client to ask server to print server info
+	ID_SERVER_INFO_REPLICATED				// return the server info to the special client
 };
 
 struct BattleServerConsts

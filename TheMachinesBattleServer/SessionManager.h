@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstdint>
 #include <memory>
+#include <sstream>
 
 class Session;
 class TheMachinesClient;
@@ -27,8 +28,13 @@ public:
 
 	void AddToSession(TheMachinesClient& client);
 	void RemoveFromSession(TheMachinesClient& client);
+	std::ostringstream& Write(std::ostringstream& oss) const;
 
 private:
 	void AddToSession(TheMachinesClient& client, std::shared_ptr<Session> session);
-
 };
+
+inline std::ostringstream& operator<<(std::ostringstream& oss, const SessionManager& sessionManager)
+{
+	return sessionManager.Write(oss);
+}

@@ -6,6 +6,7 @@
 #include "TheMachinesServerTypes.h"
 #include <memory>
 #include <chrono>
+#include <string>
 
 namespace RakNet
 {
@@ -21,7 +22,8 @@ public:
 	void RegisterClient(const RakNet::SystemAddress& address);
 	void UnregisterClient(const RakNet::SystemAddress& address);
 
-	void PrintCurrentState();
+	void SendCurrentState(const RakNet::SystemAddress& targetAddress);
+	std::string GetServerState() const;
 
 private:
 	RakNet::RakPeerInterface* peer;

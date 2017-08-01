@@ -3,6 +3,8 @@
 #include "RakNet/RakNetTypes.h"
 #include <cstdint>
 #include <vector>
+#include <sstream>
+
 
 class TheMachinesClient;
 class ClientManager;
@@ -35,6 +37,8 @@ public:
 
 	size_t GetCurrentClients() const { return clients.size(); }
 
+	std::ostringstream& Write(std::ostringstream& oss) const;
+	RakNet::RakPeerInterface* GetPeer() const;
 
 private:
 	std::vector<SessionClient> clients;
@@ -43,3 +47,5 @@ private:
 private:
 	bool AllRequiredParticipantsJoined() const;
 };
+
+inline std::ostream& operator <<(std::ostringstream& oss, const Session& session) {	return session.Write(oss); }

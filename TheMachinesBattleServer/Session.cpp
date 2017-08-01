@@ -134,3 +134,27 @@ TheMachinesClient* Session::GetFastestClientInSession() const
 	}
 	return fastestClient;
 }
+
+std::ostringstream& Session::Write(std::ostringstream& oss) const
+{
+	oss << "There are " << clients.size() << " clients within this session:\n";
+	for (const auto& sessionClient : clients)
+	{
+		oss << sessionClient.address.ToString() << ", " << "isReady = " << sessionClient.isReady << std::endl;
+		if (auto client = clientManager.GetClient(sessionClient.address))
+		{
+			oss << *client;
+		}
+		else
+		{
+			oss << "invalid client!\n";
+		}
+		oss << std::endl;
+	}
+	return oss;
+}
+
+RakNet::RakPeerInterface* Session::GetPeer() const
+{
+	return clientManager.GetPeer(); 
+}

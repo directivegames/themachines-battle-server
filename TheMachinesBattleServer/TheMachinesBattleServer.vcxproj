@@ -122,6 +122,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ClientManager.cpp" />
+    <ClCompile Include="LogClient.cpp" />
     <ClCompile Include="main2.cpp" />
     <ClCompile Include="RakNet\Base64Encoder.cpp" />
     <ClCompile Include="RakNet\BitStream.cpp" />
@@ -241,6 +242,7 @@
   <ItemGroup>
     <ClInclude Include="BattleSession.h" />
     <ClInclude Include="ClientManager.h" />
+    <ClInclude Include="LogClient.h" />
     <ClInclude Include="RakNet\AutopatcherPatchContext.h" />
     <ClInclude Include="RakNet\AutopatcherRepositoryInterface.h" />
     <ClInclude Include="RakNet\Base64Encoder.h" />

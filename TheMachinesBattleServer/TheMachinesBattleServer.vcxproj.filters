@@ -369,6 +369,9 @@
     <ClCompile Include="TheMachinesClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="LogClient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RakNet\_FindFirst.h">
@@ -855,6 +858,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="TheMachinesServerTypes.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LogClient.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
