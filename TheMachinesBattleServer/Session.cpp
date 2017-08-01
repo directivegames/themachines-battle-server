@@ -55,7 +55,7 @@ void Session::OnClientRequestSessionStart(const TheMachinesClient& requestingCli
 
 bool Session::AllRequiredParticipantsJoined() const
 {
-	return GetCurrentClients() == PARTICIPANTS_PER_SESSION;
+	return GetCurrentClients() == BattleServerConsts::PARTICIPANTS_PER_SESSION;
 }
 
 void Session::AddClient(TheMachinesClient& client)
@@ -73,12 +73,43 @@ void Session::RemoveClient(TheMachinesClient& client)
 	}
 }
 
-void Session::Broadcast(RakNet::RakPeerInterface& peer, const RakNet::BitStream& message)
+bool Session::Broadcast(RakNet::RakPeerInterface& peer, RakNet::BitStream& message)
 {
+	RakNet::MessageID messageID;
+	std::int32_t commandStartFrame;
+	message.Read(messageID);
+	message.Read(commandStartFrame);
+
+	auto success = true;
 	for (const auto& client : clients)
 	{
-		peer.Send(&message, HIGH_PRIORITY, RELIABLE_ORDERED, 0, client.address, false);
+		auto clientPing = peer.GetLastPing(client.address);
+		std::chrono::milliseconds roundTripDelay(clientPing);
+
+		const auto clientInfo = clientManager.GetClient(client.address);
+		const auto clientFrame = clientInfo->GetLastReportedFrame();
+
+		auto timeBehind = (clientFrame - commandStartFrame) * BattleServerConsts::BATTLE_WORLD_TICK_INTERVAL + roundTripDelay + clientInfo->TimeSinceLastFrameReported();
+		if (timeBehind > BattleServerConsts::BATTLE_WORLD_TICK_INTERVAL * BattleServerConsts::COMMAND_EXECUTE_DELAY - BattleServerConsts::TIME_BUFF_TO_DISCARD_GAME_MESSAGE)
+		{
+			printf("Game Command %d broadcast failed. It is %lld ms behind client %s.", messageID, timeBehind.count(), clientInfo->GetAddress().ToString());
+			printf("\tFastest client last reported frame: %d, command start frame: %d, frame behind: %d", clientFrame, commandStartFrame, clientFrame - commandStartFrame);
+			printf("\tClient whose command was discarded' roundtrip duration: %d ms", peer.GetLastPing(clientInfo->GetAddress()));
+			printf("\tFastest client's round trip %lld ms, duration since fastest client's last frame report: %lld ms", roundTripDelay.count(), clientInfo->TimeSinceLastFrameReported().count());
+
+			success = false;
+			break;
+		}
 	}
+
+	if (success)
+	{
+		for (const auto& client : clients)
+		{
+			peer.Send(&message, HIGH_PRIORITY, RELIABLE_ORDERED, 0, client.address, false);
+		}
+	}
+	return success;
 }
 
 std::int32_t Session::GetFastestFrameInSession() const

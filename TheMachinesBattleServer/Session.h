@@ -26,7 +26,7 @@ public:
 	Session(ClientManager& _clientManager);
 
 	void OnClientRequestSessionStart(const TheMachinesClient& requestingClient, RakNet::RakPeerInterface* peer);
-	void Broadcast(RakNet::RakPeerInterface& peer, const RakNet::BitStream& message);
+	bool Broadcast(RakNet::RakPeerInterface& peer, RakNet::BitStream& message);
 	std::int32_t GetFastestFrameInSession() const;
 	TheMachinesClient* GetFastestClientInSession() const;
 
@@ -35,7 +35,6 @@ public:
 
 	size_t GetCurrentClients() const { return clients.size(); }
 
-	static const int PARTICIPANTS_PER_SESSION = 2;
 
 private:
 	std::vector<SessionClient> clients;

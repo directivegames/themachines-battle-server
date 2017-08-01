@@ -1,3 +1,4 @@
+#include "TheMachinesServerTypes.h"
 #include "SessionManager.h"
 #include "TheMachinesClient.h"
 #include "Session.h"
@@ -36,7 +37,7 @@ void SessionManager::AddToSession(TheMachinesClient& client)
 	{
 		// no valid battle id.
 		AddToSession(client, freeGuestSession);
-		if (freeGuestSession->GetCurrentClients() == Session::PARTICIPANTS_PER_SESSION)
+		if (freeGuestSession->GetCurrentClients() == BattleServerConsts::PARTICIPANTS_PER_SESSION)
 		{
 			guestSessions.push_back(std::move(freeGuestSession));
 			freeGuestSession = std::make_shared<Session>(clientManager);
