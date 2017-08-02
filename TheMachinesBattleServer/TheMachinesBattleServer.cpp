@@ -4,9 +4,18 @@
 #include "Session.h"
 #include <iostream>
 #include <sstream>
+#include <chrono>
+#include <ctime>
 
 const std::chrono::milliseconds BattleServerConsts::BATTLE_WORLD_TICK_INTERVAL(10);
 const std::chrono::milliseconds BattleServerConsts::TIME_BUFF_TO_DISCARD_GAME_MESSAGE(10);
+
+std::string GetTime()
+{
+	auto now = std::chrono::system_clock::now();
+	std::time_t now_t = std::chrono::system_clock::to_time_t(now);
+	return std::string(std::ctime(&now_t));
+}
 
 TheMachinesBattleServer::TheMachinesBattleServer()
 	: peer(RakNet::RakPeerInterface::GetInstance())
@@ -19,6 +28,7 @@ TheMachinesBattleServer::TheMachinesBattleServer()
 		peer->SetMaximumIncomingConnections(BattleServerConsts::MAX_CONNECTIONS);
 
 		printf("============================================\n");
+		printf("%s", GetTime().c_str());
 		printf("The Machines(TM) battle server has started at port %d\n", BattleServerConsts::SERVER_PORT);
 		printf("Participants per battle: %d\n", BattleServerConsts::PARTICIPANTS_PER_SESSION);
 		printf("Max connections: %d\n", BattleServerConsts::MAX_CONNECTIONS);
@@ -44,15 +54,18 @@ void TheMachinesBattleServer::Update()
 			case ID_REMOTE_CONNECTION_LOST:
 			case ID_DISCONNECTION_NOTIFICATION:
 			case ID_CONNECTION_LOST:
+				printf("%s", GetTime().c_str());
 				printf("Client disconnected: %s\n", clientAddress.ToString(true));
 				UnregisterClient(clientAddress);
 				break;
 			case ID_REMOTE_NEW_INCOMING_CONNECTION:
 			case ID_NEW_INCOMING_CONNECTION:
+				printf("%s", GetTime().c_str());
 				printf("Client incoming: %s\n", clientAddress.ToString(true));
 				RegisterClient(clientAddress);
 				break;
 			case (int)TheMachinesGameMessages::ID_GAME_COMMAND_REQUEST_BATTLE_START:
+				printf("%s", GetTime().c_str());
 				printf("Client %s requesting battle start. Client round trip: %lld ms.\n", clientAddress.ToString(true), std::chrono::milliseconds(peer->GetLastPing(clientAddress)).count());
 				OnClientRequestSessionStart(clientAddress);
 				break;
@@ -72,6 +85,7 @@ void TheMachinesBattleServer::Update()
 				SendCurrentState(packet->systemAddress);
 				break;
 			default:
+				printf("%s", GetTime().c_str());
 				printf("Message with unknown identifier %i has arrived.\n\n", packet->data[0]);
 				break;
 			}
@@ -123,6 +137,7 @@ void TheMachinesBattleServer::BroadcastGameInstruction(const RakNet::SystemAddre
 			RakNet::BitStream bs(packet->data, packet->length, false);
 			if (!session->Broadcast(*peer, bs))
 			{
+				printf("%s", GetTime().c_str());
 				printf("Client %s game message discarded.\n", instigatingClientAddress.ToString());
 			}
 		}
@@ -142,6 +157,7 @@ void TheMachinesBattleServer::OnClientReportFrameCount(const RakNet::SystemAddre
 			auto fastestFrame = session->GetFastestFrameInSession();
 			if (fastestFrame - frame >= BattleServerConsts::CATCH_UP_REQUIRED_THRESHOLD && frame >= client->GetCatchupTargetFrame())	// if already catching up, don't constantly send catchup commands
 			{
+				printf("%s", GetTime().c_str());
 				client->SetCatchupTargetFrame(fastestFrame);
 
 				RakNet::BitStream bsOut;
@@ -186,6 +202,7 @@ std::string TheMachinesBattleServer::GetServerState() const
 	std::string serverState = oss.str();
 
 	printf("============Logging server state============\n");
+	printf("%s", GetTime().c_str());
 	printf("%s", serverState.c_str());
 	printf("============================================\n");
 
