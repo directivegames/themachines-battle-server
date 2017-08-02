@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <vector>
 #include <sstream>
-
+#include <chrono>
 
 class TheMachinesClient;
 class ClientManager;
@@ -42,6 +42,7 @@ public:
 
 private:
 	std::vector<SessionClient> clients;
+	std::int32_t negotiatedCommandDelayFrames;
 	ClientManager& clientManager;	// damn this is ugly
 
 private:

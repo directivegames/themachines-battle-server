@@ -27,6 +27,7 @@ void Session::OnClientRequestSessionStart(const TheMachinesClient& requestingCli
 	}
 
 	bool allClientsReady = true;
+	int longestPing = 0;
 	for (const auto& sessionClient : clients)
 	{
 		if (!sessionClient.isReady)
@@ -34,10 +35,20 @@ void Session::OnClientRequestSessionStart(const TheMachinesClient& requestingCli
 			allClientsReady = false;
 			break;
 		}
+		
+		auto clientPing = peer->GetLastPing(sessionClient.address);
+		if (clientPing > longestPing)
+		{
+			longestPing = clientPing;
+		}
 	}
 
 	if (allClientsReady)
 	{
+		negotiatedCommandDelayFrames = std::max<std::int32_t>(
+			BattleServerConsts::LEAST_COMMAND_EXECUTE_DELAY
+			, (longestPing + BattleServerConsts::NEGOTIATED_COMMAND_EXECUTION_DELAY_MINUS_LONGEST_PING) / (int)BattleServerConsts::BATTLE_WORLD_TICK_INTERVAL.count());
+
 		int team = 0;
 		for (const auto& client : clients)
 		{
@@ -45,11 +56,12 @@ void Session::OnClientRequestSessionStart(const TheMachinesClient& requestingCli
 			bsOut.Write((RakNet::MessageID)TheMachinesGameMessages::ID_GAME_COMMAND_BATTLE_STARTED);
 			bsOut.Write((RakNet::MessageID)team);
 			bsOut.Write((RakNet::MessageID)clients.size());
+			bsOut.Write(negotiatedCommandDelayFrames);
 			peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, client.address, false);
 			++team;
 		}
 
-		//printf("Session %d started\n\n", sessionID);
+		printf("Session started with negotiated command execution delay %d frames (Slowest client has the ping at %d ms).\n\n", negotiatedCommandDelayFrames, longestPing);
 	}
 }
 
@@ -90,7 +102,7 @@ bool Session::Broadcast(RakNet::RakPeerInterface& peer, RakNet::BitStream& messa
 		const auto clientFrame = clientInfo->GetLastReportedFrame();
 
 		auto timeBehind = (clientFrame - commandStartFrame) * BattleServerConsts::BATTLE_WORLD_TICK_INTERVAL + roundTripDelay + clientInfo->TimeSinceLastFrameReported();
-		if (timeBehind > BattleServerConsts::BATTLE_WORLD_TICK_INTERVAL * BattleServerConsts::COMMAND_EXECUTE_DELAY - BattleServerConsts::TIME_BUFF_TO_DISCARD_GAME_MESSAGE)
+		if (timeBehind > negotiatedCommandDelayFrames * BattleServerConsts::BATTLE_WORLD_TICK_INTERVAL - BattleServerConsts::TIME_BUFF_TO_DISCARD_GAME_MESSAGE)
 		{
 			printf("Game Command %d broadcast failed. It is %lld ms behind client %s.", messageID, timeBehind.count(), clientInfo->GetAddress().ToString());
 			printf("\tFastest client last reported frame: %d, command start frame: %d, frame behind: %d", clientFrame, commandStartFrame, clientFrame - commandStartFrame);
@@ -138,6 +150,7 @@ TheMachinesClient* Session::GetFastestClientInSession() const
 std::ostringstream& Session::Write(std::ostringstream& oss) const
 {
 	oss << "There are " << clients.size() << " clients within this session:\n";
+	oss << "Session has negotiated command execution delay " << negotiatedCommandDelayFrames << "frames.\n";
 	for (const auto& sessionClient : clients)
 	{
 		oss << sessionClient.address.ToString() << ", " << "isReady = " << sessionClient.isReady << std::endl;

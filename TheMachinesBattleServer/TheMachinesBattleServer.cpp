@@ -33,7 +33,7 @@ TheMachinesBattleServer::TheMachinesBattleServer()
 		printf("Participants per battle: %d\n", BattleServerConsts::PARTICIPANTS_PER_SESSION);
 		printf("Max connections: %d\n", BattleServerConsts::MAX_CONNECTIONS);
 		printf("Catch up threshold: %d.\n", BattleServerConsts::CATCH_UP_REQUIRED_THRESHOLD);
-		printf("Battle command execution delay: %d frames.\n", BattleServerConsts::COMMAND_EXECUTE_DELAY);
+		printf("Battle command execution delay %dms longer than the biggest ping (or at least %d frames).\n", BattleServerConsts::NEGOTIATED_COMMAND_EXECUTION_DELAY_MINUS_LONGEST_PING, BattleServerConsts::LEAST_COMMAND_EXECUTE_DELAY);
 		printf("Battle world tick interval: %lld ms.\n", BattleServerConsts::BATTLE_WORLD_TICK_INTERVAL.count());
 		printf("Time buff to discard game message: %lld ms.\n", BattleServerConsts::TIME_BUFF_TO_DISCARD_GAME_MESSAGE.count());
 		printf("============================================\n\n");
