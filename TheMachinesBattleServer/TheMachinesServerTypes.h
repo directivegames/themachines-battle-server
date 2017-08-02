@@ -26,7 +26,7 @@ enum class TheMachinesGameMessages
 
 struct BattleServerConsts
 {
-	static const int SERVER_PORT = 7888;
+	static const int SERVER_PORT = 7890;
 	static const int MAX_CONNECTIONS = 100;
 	static const int CATCH_UP_REQUIRED_THRESHOLD = 20;	// A client will be required to catch up if it is this many frames behind the fastest client in the same session
 	static const std::chrono::milliseconds BATTLE_WORLD_TICK_INTERVAL;	// corresponding to BattleWorld::tickInterval
