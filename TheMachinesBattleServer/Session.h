@@ -42,7 +42,7 @@ public:
 
 private:
 	std::vector<SessionClient> clients;
-	std::int32_t negotiatedCommandDelayFrames;
+	std::int32_t negotiatedCommandDelayFrames = 0;
 	ClientManager& clientManager;	// damn this is ugly
 
 private:

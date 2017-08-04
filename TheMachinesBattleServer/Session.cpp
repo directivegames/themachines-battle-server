@@ -104,10 +104,10 @@ bool Session::Broadcast(RakNet::RakPeerInterface& peer, RakNet::BitStream& messa
 		auto timeBehind = (clientFrame - commandStartFrame) * BattleServerConsts::BATTLE_WORLD_TICK_INTERVAL + roundTripDelay + clientInfo->TimeSinceLastFrameReported();
 		if (timeBehind > negotiatedCommandDelayFrames * BattleServerConsts::BATTLE_WORLD_TICK_INTERVAL - BattleServerConsts::TIME_BUFF_TO_DISCARD_GAME_MESSAGE)
 		{
-			printf("Game Command %d broadcast failed. It is %lld ms behind client %s.", messageID, timeBehind.count(), clientInfo->GetAddress().ToString());
-			printf("\tFastest client last reported frame: %d, command start frame: %d, frame behind: %d", clientFrame, commandStartFrame, clientFrame - commandStartFrame);
-			printf("\tClient whose command was discarded' roundtrip duration: %d ms", peer.GetLastPing(clientInfo->GetAddress()));
-			printf("\tFastest client's round trip %lld ms, duration since fastest client's last frame report: %lld ms", roundTripDelay.count(), clientInfo->TimeSinceLastFrameReported().count());
+			printf("Game Command %d broadcast failed. It is %lld ms behind client %s.\n", messageID, timeBehind.count(), clientInfo->GetAddress().ToString());
+			printf("\tThe faster client last reported frame: %d, command start frame: %d, frame behind: %d\n", clientFrame, commandStartFrame, clientFrame - commandStartFrame);
+			printf("\tClient whose command was discarded' roundtrip duration: %d ms\n", peer.GetLastPing(clientInfo->GetAddress()));
+			printf("\tFastest client's round trip %lld ms, duration since fastest client's last frame report: %lld ms\n", roundTripDelay.count(), clientInfo->TimeSinceLastFrameReported().count());
 
 			success = false;
 			break;

@@ -9,6 +9,7 @@
 
 const std::chrono::milliseconds BattleServerConsts::BATTLE_WORLD_TICK_INTERVAL(10);
 const std::chrono::milliseconds BattleServerConsts::TIME_BUFF_TO_DISCARD_GAME_MESSAGE(10);
+const std::chrono::milliseconds BattleServerConsts::CATCH_UP_REQUIRED_THRESHOLD(200);
 
 std::string GetTime()
 {
@@ -32,7 +33,7 @@ TheMachinesBattleServer::TheMachinesBattleServer()
 		printf("The Machines(TM) battle server has started at port %d\n", BattleServerConsts::SERVER_PORT);
 		printf("Participants per battle: %d\n", BattleServerConsts::PARTICIPANTS_PER_SESSION);
 		printf("Max connections: %d\n", BattleServerConsts::MAX_CONNECTIONS);
-		printf("Catch up threshold: %d.\n", BattleServerConsts::CATCH_UP_REQUIRED_THRESHOLD);
+		printf("Catch up threshold: %lld ms.\n", BattleServerConsts::CATCH_UP_REQUIRED_THRESHOLD.count());
 		printf("Battle command execution delay %dms longer than the biggest ping (or at least %d frames).\n", BattleServerConsts::NEGOTIATED_COMMAND_EXECUTION_DELAY_MINUS_LONGEST_PING, BattleServerConsts::LEAST_COMMAND_EXECUTE_DELAY);
 		printf("Battle world tick interval: %lld ms.\n", BattleServerConsts::BATTLE_WORLD_TICK_INTERVAL.count());
 		printf("Time buff to discard game message: %lld ms.\n", BattleServerConsts::TIME_BUFF_TO_DISCARD_GAME_MESSAGE.count());
@@ -154,18 +155,42 @@ void TheMachinesBattleServer::OnClientReportFrameCount(const RakNet::SystemAddre
 
 		if (auto session = client->GetSession())
 		{
-			auto fastestFrame = session->GetFastestFrameInSession();
-			if (fastestFrame - frame >= BattleServerConsts::CATCH_UP_REQUIRED_THRESHOLD && frame >= client->GetCatchupTargetFrame())	// if already catching up, don't constantly send catchup commands
+			// fastest client is NOW actually at time:
+			//		FastestClientLastestReportedFrame * gameInverval + Ping(FastestClient) / 2 + TimeSinceLastFastestClientReportFrame
+			// querying client is NOW actually at time:
+			//		ReportedFrame * gameInterval + Ping(QueryingClient) / 2
+			const auto fastestClient = session->GetFastestClientInSession();
+			const auto fastestReportedFrame = fastestClient->GetLastReportedFrame();
+			const auto fastestClientPing = std::chrono::milliseconds(peer->GetLastPing(fastestClient->GetAddress()));
+			const auto timeSinceLastFastestFrameReported = fastestClient->TimeSinceLastFrameReported();
+			const auto fastestClientCurrentEstimatedTime = fastestReportedFrame * BattleServerConsts::BATTLE_WORLD_TICK_INTERVAL + fastestClientPing / 2 + timeSinceLastFastestFrameReported;
+
+			const auto queryingClientPing = std::chrono::milliseconds(peer->GetLastPing(address));
+			const auto queringClientCurrentEstimatedTime = frame * BattleServerConsts::BATTLE_WORLD_TICK_INTERVAL + queryingClientPing / 2;
+
+			const auto timeDiff = fastestClientCurrentEstimatedTime - queringClientCurrentEstimatedTime;
+
+			if (timeDiff >= BattleServerConsts::CATCH_UP_REQUIRED_THRESHOLD 
+				// if already catching up, don't constantly send catchup commands. and give some buff for catching up, since catching up to frame X won't actually catch up at frame 30, will meet a few frames after
+				&& frame >= client->GetCatchupTargetFrame() + 30)
 			{
-				printf("%s", GetTime().c_str());
-				client->SetCatchupTargetFrame(fastestFrame);
+				const auto catchupTargetFrame = (int)((fastestClientCurrentEstimatedTime + queryingClientPing  / 2 )/ BattleServerConsts::BATTLE_WORLD_TICK_INTERVAL);	// compensate the quering client's ping
+				client->SetCatchupTargetFrame(catchupTargetFrame);
 
 				RakNet::BitStream bsOut;
 				bsOut.Write((RakNet::MessageID)TheMachinesGameMessages::ID_GAME_COMMAND_CATCH_UP);
-				bsOut.Write((std::int32_t)fastestFrame);
+				bsOut.Write((std::int32_t)catchupTargetFrame);
 				peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, address, false);
 
-				printf("Client %s is %d frames behind the fastest client. Requesting it to catch up.\n", address.ToString(), fastestFrame - frame);
+				printf("%s", GetTime().c_str());
+				printf("Client %s (frame %d) is %lld ms behind the fastest client. Requesting it to catch up to frame %d.\n", address.ToString(), frame, timeDiff.count(), catchupTargetFrame);
+				printf("Fastet client %s last reported frame is %d, and was %lld ms ago.\n", fastestClient->GetAddress().ToString(), fastestReportedFrame, timeSinceLastFastestFrameReported.count());
+				printf("Fastet client ping %lld ms, catching up client ping %lld ms.\n", fastestClientPing.count(), queryingClientPing.count());
+				printf("\tCatchup target frame is fastst client's current frame %d,\n\t+time since reported %d frames,\n\t+quering client ping %d frames,\n\t-fastest client half ping %d frames.\n"
+					, fastestReportedFrame
+					, (int)(timeSinceLastFastestFrameReported/BattleServerConsts::BATTLE_WORLD_TICK_INTERVAL) 
+					, (int)(fastestClientPing / BattleServerConsts::BATTLE_WORLD_TICK_INTERVAL)
+					, (int)(queryingClientPing / 2 / BattleServerConsts::BATTLE_WORLD_TICK_INTERVAL));
 			}
 		}
 	}

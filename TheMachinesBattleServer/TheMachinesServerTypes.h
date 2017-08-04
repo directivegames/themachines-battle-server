@@ -28,7 +28,7 @@ struct BattleServerConsts
 {
 	static const int SERVER_PORT = 7890;
 	static const int MAX_CONNECTIONS = 100;
-	static const int CATCH_UP_REQUIRED_THRESHOLD = 20;	// A client will be required to catch up if it is this many frames behind the fastest client in the same session
+	static const std::chrono::milliseconds CATCH_UP_REQUIRED_THRESHOLD;	// A client will be required to catch up if it is this many frames behind the fastest client in the same session, in ms
 	static const std::chrono::milliseconds BATTLE_WORLD_TICK_INTERVAL;	// corresponding to BattleWorld::tickInterval
 	static const int LEAST_COMMAND_EXECUTE_DELAY = 30;					// smallest command execution delay, even if all clients' ping are very small
 	static const int NEGOTIATED_COMMAND_EXECUTION_DELAY_MINUS_LONGEST_PING = 120;	// the negotiated command execution delay will be the biggest ping plus this duration (in ms)
