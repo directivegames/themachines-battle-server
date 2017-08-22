@@ -16,7 +16,7 @@ namespace RakNet
 class TheMachinesBattleServer
 {
 public:
-	TheMachinesBattleServer();
+	TheMachinesBattleServer(unsigned short listenPort);
 
 	void Update();
 	void RegisterClient(const RakNet::SystemAddress& address);

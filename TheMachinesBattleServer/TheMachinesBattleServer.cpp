@@ -18,19 +18,19 @@ std::string GetTime()
 	return std::string(std::ctime(&now_t));
 }
 
-TheMachinesBattleServer::TheMachinesBattleServer()
+TheMachinesBattleServer::TheMachinesBattleServer(unsigned short listenPort)
 	: peer(RakNet::RakPeerInterface::GetInstance())
 	, clientManager(std::make_unique<ClientManager>(peer))
 	, sessionManager(std::make_unique<SessionManager>(*clientManager))
 {
-	RakNet::SocketDescriptor sd(BattleServerConsts::SERVER_PORT, 0);
+	RakNet::SocketDescriptor sd(listenPort > 1024 ? listenPort : BattleServerConsts::SERVER_PORT, 0);
 	if (RakNet::RAKNET_STARTED == peer->Startup(BattleServerConsts::MAX_CONNECTIONS, &sd, 1))
 	{
 		peer->SetMaximumIncomingConnections(BattleServerConsts::MAX_CONNECTIONS);
 
 		printf("============================================\n");
 		printf("%s", GetTime().c_str());
-		printf("The Machines(TM) battle server has started at port %d\n", BattleServerConsts::SERVER_PORT);
+		printf("The Machines(TM) battle server has started at port %d\n", sd.port);
 		printf("Participants per battle: %d\n", BattleServerConsts::PARTICIPANTS_PER_SESSION);
 		printf("Max connections: %d\n", BattleServerConsts::MAX_CONNECTIONS);
 		printf("Catch up threshold: %lld ms.\n", BattleServerConsts::CATCH_UP_REQUIRED_THRESHOLD.count());
