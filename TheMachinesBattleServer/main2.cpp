@@ -33,7 +33,8 @@ int main(int argc, char * argv[])
 	}
 	else
 	{
-		TheMachinesBattleServer server;
+		const auto listenPort = getCmdOption(argv, argv + argc, "-port");
+		TheMachinesBattleServer server(listenPort ? atoi(listenPort) : 0);
 		server.Update();
 	}
 
